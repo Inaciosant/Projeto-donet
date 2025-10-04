@@ -1,0 +1,100 @@
+@page "/Cadastrar-itens"
+<PageTitle>Cadastrar Itens</PageTitle>
+
+<h1 class="text-dark">Cadastrar Itens</h1>
+<form>
+<div class="mb-3">
+    <label for="nome" class="form-label">Nome do Item</label>
+    <input type="text" class="form-control" id="nome" @bind="novoItem.Nome" />
+</div>
+<div class="mb-3">
+    <label for="descricao" class="form-label">Descrição do Item</label>
+    <input type="text" class="form-control" id="descricao" @bind="novoItem.Descricao" />
+</div>
+<div class="mb-3">
+    <label for="preco" class="form-label">Preço do Item</label>
+    <input type="text" class="form-control" id="preco" @bind="PrecoTexto" />
+</div>
+<button type="button" class="btn btn-primary" @onclick="CadastrarItem ">Cadastrar</button>
+</form>
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success mt-3" role="alert">
+        @SuccessMessage
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3" role="alert">
+        @errorMessage
+    </div>
+}
+
+@code{
+    public class Itens
+    {
+        public int Id { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Descricao { get; set; } = string.Empty;
+        public decimal Preco { get; set; }
+    }
+
+    private Itens novoItem = new Itens();
+    private string SuccessMessage = string.Empty;
+    private string errorMessage = string.Empty;
+    private string precoTexto = string.Empty;
+
+    private readonly System.Globalization.NumberStyles style = System.Globalization.NumberStyles.Currency | System.Globalization.NumberStyles.Number;
+    private readonly System.Globalization.CultureInfo culture = System.Globalization.CultureInfo.CurrentCulture;
+
+    private string PrecoTexto
+    {
+        get => precoTexto;
+        set
+        {
+            precoTexto = value ?? string.Empty;
+
+            if (decimal.TryParse(precoTexto, style, culture, out var parsed))
+            {
+                novoItem.Preco = parsed;
+                precoTexto = FormatCurrency(parsed);
+                errorMessage = string.Empty;
+            }
+            else
+            {
+                var cleaned = precoTexto.Replace(culture.NumberFormat.CurrencySymbol, "").Trim();
+                if (decimal.TryParse(cleaned, System.Globalization.NumberStyles.Number | System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, culture, out parsed))
+                {
+                    novoItem.Preco = parsed;
+                    precoTexto = FormatCurrency(parsed);
+                    errorMessage = string.Empty;
+                }
+                else
+                {
+                    
+                    errorMessage = "Por favor, insira um valor numérico válido para o preço.";
+                }
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // garante que o input exiba formatação inicial (R$ 0,00 ou equivalente)
+        precoTexto = FormatCurrency(novoItem.Preco);
+    }
+
+    public void CadastrarItem()
+    {
+        SuccessMessage = $"Item '{novoItem.Nome}' cadastrado com sucesso! Preço: {FormatCurrency(novoItem.Preco)}";
+        novoItem = new Itens();
+        precoTexto = FormatCurrency(novoItem.Preco);
+    }
+
+    public string FormatCurrency(decimal value)
+    {
+        return value.ToString("C", culture);
+    }
+}
